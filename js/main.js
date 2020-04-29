@@ -192,7 +192,7 @@ class Project {
     });
   }
 
-  newImage(image, type, valuesMap, values){
+  newImage(image, valuesMap, values){
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
@@ -205,26 +205,9 @@ class Project {
     const sprite = new Sprite(context, image);
 
     this.images.appendChild(canvas);
-
-    switch(type){
-      case "grid":
-        sprite.grid(this);
-      break;
-      case "tile":
-        let id = this.values.length;
-        sprite.id = id;
-        this.values.push(sprite);
-        canvas.onclick = () => {
-
-          this.canvasSettings.style.display = "block"
-          this.selectedValue = id;
-          this.selectedCanvas = sprite;
-        }
-      break;
-      default:
-        sprite.spriteSheet(this, valuesMap, values);
-    }
-
+ 
+    sprite.spriteSheet(this, valuesMap, values);
+    
   }
 
   saveImage(){
@@ -351,67 +334,6 @@ class Sprite {
 
     this.wLength = 1;
     this.hLength = 1;
-
-  }
-
-  grid(project){
-
-    const {isSprite, id, context, canvas, image, canvas: {width, height, offsetLeft, offsetTop}} = this;
-
-    this.isSprite = true;
-    let _id = project.values.length;
-    let x = 0;
-    let y = 0;
-
-    const sprites = this.sprites;
-
-    context.strokeStyle = "#153f46";
-    while(y < height){
-      sprites.push([]);
-      while(x < width){
-
-        project.values.push({x, y, image, id: _id, width: project.tileSize, height: project.tileSize, wLength: 1, hLength: 1});
-
-        sprites[y/project.tileSize][x/project.tileSize] = _id;
-
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x+project.tileSize, y);
-        context.stroke();
-
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x, y+project.tileSize);
-        context.stroke();
-
-        x+=project.tileSize;
-        _id++;
-
-      }
-      x = 0;
-      y+=project.tileSize;
-    }
-
-    this.isSprite = true;
-
-    canvas.onclick = (e) => {
-
-      const currentX = e.pageX - offsetLeft;
-      const currentY = e.pageY - canvas.getBoundingClientRect().y;
-
-      const ratio = 290/width;
-
-      const x = Math.floor(currentX/(project.tileSize*ratio));
-      const y = Math.floor(currentY/(project.tileSize*ratio));
-
-      if(sprites[y] == undefined || sprites[y][x] == undefined) return;
-
-      project.selectedValue = sprites[y][x];
-      project.selectedCanvas = this;
-
-      project.canvasSettings.style.display = "block";
-
-    }
 
   }
 
@@ -699,8 +621,6 @@ window.addEventListener("load", function(){
       imageUploadButton.onclick = () => {
 
         selectValues.style.display = "none";
-        imageType.onchange = null;
-        imageType.onchange = null;
         addValueBut.onclick = null;
 
          project.newImage(image, valuesMap, values);
