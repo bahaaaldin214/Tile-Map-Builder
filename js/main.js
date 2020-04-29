@@ -533,49 +533,33 @@ function drawGrid(context, tileSize, color, width, height, text){
   }
 }
 
-function drawNewImage(type, context, image, tileSize, values, realTileSize, id){
+function drawNewImage(context, image, tileSize, values, realTileSize, id){
   context.clearRect(0, 0, 300, context.canvas.height);
   context.drawImage(image, 0, 0, 300, context.canvas.height);
 
-    switch(type){
-      case "tile": 
-        context.strokeStyle = "#153fc6";
-        context.lineWidth = 5;
-        context.strokeRect(0, 0, context.canvas.width, context.canvas.height);
-        context.lineWidth = 1;
-      break;
+  drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height);
+  
+  const drawnIds = {};
+  
+  for(let i = values.length; i--;){
 
-      case "grid": 
-        drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height, id);
-      break;
-      
-      case "spriteSheet": 
-        drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height);
-        context.fillStyle = "#153fc680";
-        context.fillRect(0, 0, image.width, image.height);
-        const drawnIds = {};
-        for(let i = values.length; i--;){
+    const {id, x, y, wLength, hLength} = values[i];
+    if(drawnIds[id]) continue;
 
-          const {id, x, y, wLength, hLength} = values[i];
+    drawnIds[id] = true;
+    context.drawImage(image, x, y, wLength*realTileSize, hLength*realTileSize,
+      x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
+
+    context.fillStyle = "#000"
+    context.font = tileSize+"px Georgia";
+    context.fillText(id.toString(), x/realTileSize*tileSize, y/realTileSize*tileSize+tileSize);
           
-          if(drawnIds[id]) continue;
+    context.strokeStyle = "#153fc6";
+    context.lineWidth = 3;
+    context.strokeRect(x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
+    context.lineWidth = 1;
 
-          drawnIds[id] = true;
-          context.drawImage(image, x, y, wLength*realTileSize, hLength*realTileSize,
-               x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
-
-          context.fillStyle = "#000"
-          context.font = tileSize+"px Georgia";
-          context.fillText(id.toString(), x/realTileSize*tileSize, y/realTileSize*tileSize+tileSize);
-          
-          context.strokeStyle = "#153fc6";
-          context.lineWidth = 5;
-          context.strokeRect(x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
-          context.lineWidth = 1;
-
-        }
-      break;
-    }
+  }
 }
 
 function drawSelected(image, context, tileSize, realTileSize, x, y, width, height){
@@ -590,14 +574,14 @@ window.addEventListener("load", function(){
 
   const imageInput = document.querySelector("#imageUpload");
   const [info, imageInfo] = document.querySelectorAll(".popUp");
-  
+
   const imageUploadButton = imageInfo.querySelector("#uploadButton");
-  const imageType = imageInfo.querySelector("select");
-  
+
   const newImageCanvas  = imageInfo.querySelector("canvas").getContext("2d");
-  
+
   const selectValues = imageInfo.querySelector("#selectValues");
-  const addValueBut = selectValues.querySelector("#addValueButton")
+  const addValueBut = selectValues.querySelector("#addValueButton");
+  const addTilesBut = selectValues.querySelector("#addTilesButton");
 
   newImageCanvas.canvas.width = 300;
 
@@ -612,14 +596,12 @@ window.addEventListener("load", function(){
 
       project.createImage(this.result).then(image => {
 
-        imageType.value = "tile";
         css.fadeInGrid.run(imageInfo);
         const ratio = 300/image.width;
         let tileSize = ratio*project.tileSize;
 
         newImageCanvas.canvas.height = 300/image.width*image.height;
 
-        let imageTypeValue = imageType.value;
         let valuesMap = new Array(Math.floor(image.height/project.tileSize));
 
         for(let i = valuesMap.length; i--;){
@@ -628,92 +610,104 @@ window.addEventListener("load", function(){
 
         let values = [];
 
-        drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize, project.values.length);
-        
-        imageType.onchange = function(){
-          imageTypeValue = this.value;
-          newImageCanvas.canvas.onmousedown = newImageCanvas.canvas.onmouseup = newImageCanvas.canvas.onmousemove = null;
-          drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize, project.values.length);
+        drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize, project.values.length);
 
-          selectValues.style.display = "none";
-          if(imageTypeValue == "spriteSheet"){
+        let startCoords = [0, 0];
+        let lastCoords = [];
 
-            let startCoords = [0, 0];
-            let lastCoords = [];
+        selectValues.style.display = "block";
+        let lastMouseType = "";
 
-            selectValues.style.display = "block";
-            let lastMouseType = "";
-            
-            newImageCanvas.canvas.onmousedown = newImageCanvas.canvas.onmouseup = newImageCanvas.canvas.onmousemove = (e) => {
+        newImageCanvas.canvas.onmousedown = newImageCanvas.canvas.onmouseup = newImageCanvas.canvas.onmousemove = (e) => {
 
-              const canvasCoords =newImageCanvas.canvas.getBoundingClientRect(); 
-              let x = Math.floor((e.pageX - canvasCoords.x)/tileSize);
-              let y = Math.floor((e.pageY - canvasCoords.y)/tileSize);
+          const canvasCoords =newImageCanvas.canvas.getBoundingClientRect(); 
+          let x = Math.floor((e.pageX - canvasCoords.x)/tileSize);
+          let y = Math.floor((e.pageY - canvasCoords.y)/tileSize);
               
-              if(e.type == "mousedown") {
-                startCoords = [x, y];
-                lastMouseType = "mousedown";
-              }
+          if(e.type == "mousedown") {
+            startCoords = [x, y];
+            lastMouseType = "mousedown";
+          }
 
-
-              if(e.type == "mouseup") {
-                x++;
-                y++;
-                lastCoords = [x, y];
-                lastMouseType = "mouseup";
-                drawNewImage(imageTypeValue, newImageCanvas, image, tileSize, values, project.tileSize);
-                drawSelected(image, newImageCanvas, tileSize, project.tileSize, x > startCoords[0] ? startCoords[0] : x,  y > startCoords[1] ? startCoords[1] : y, Math.abs(x-startCoords[0]), Math.abs(y-startCoords[1]));
-
-              }
-              if(e.type == "mousemove" && lastMouseType == "mousedown"){
-                x++;
-                y++;
-                drawNewImage(imageTypeValue, newImageCanvas, image, tileSize, values, project.tileSize);
-                drawSelected(image, newImageCanvas, tileSize, project.tileSize, x > startCoords[0] ? startCoords[0] : x,  y > startCoords[1] ? startCoords[1] : y, Math.abs(x-startCoords[0]), Math.abs(y-startCoords[1]));
-              }
-
-            }
-
-            addValueBut.onclick = () => {
-              const [x, y] = lastCoords;
-              let width = Math.abs(x-startCoords[0]);
-              let height = Math.abs(y-startCoords[1]);
-
-              let currentX = x > startCoords[0] ? startCoords[0] : x;
-              let currentY = y > startCoords[1] ? startCoords[1] : y;
-
-              let id = values.length+project.values.length;
-              values.push({x: currentX*project.tileSize, y: currentY*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: width, hLength:height});
-
-              for(let _x = 0; _x < width; _x++){
-                for(let _y = 0; _y < height; _y++){
-
-                  if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) return;
-                  
-                  valuesMap[_y+currentY][_x+currentX] = id;
-                  
-                }
-              }
-
-              drawNewImage(imageTypeValue, newImageCanvas, image, tileSize, values, project.tileSize);
-            }
-
+          if(e.type == "mouseup") {
+            x++;
+            y++;
+            lastCoords = [x, y];
+            lastMouseType = "mouseup";
+            drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
+            newImageCanvas.fillStyle = "#153fc680"
+            newImageCanvas.fillRect((x > startCoords[0] ? startCoords[0] : x)*tileSize,  (y > startCoords[1] ? startCoords[1] : y)*tileSize, Math.abs(x-startCoords[0])*tileSize, Math.abs(y-startCoords[1])*tileSize);
+          }
+          if(e.type == "mousemove" && lastMouseType == "mousedown"){
+            x++;
+            y++;
+            drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
+            newImageCanvas.fillStyle = "#153fc680"
+            newImageCanvas.fillRect((x > startCoords[0] ? startCoords[0] : x)*tileSize,  (y > startCoords[1] ? startCoords[1] : y)*tileSize, Math.abs(x-startCoords[0])*tileSize, Math.abs(y-startCoords[1])*tileSize);
           }
 
         }
-        imageUploadButton.onclick = () => {
 
-          selectValues.style.display = "none";
-          imageType.onchange = null;
-          imageType.onchange = null;
-          addValueBut.onclick = null;
+        addValueBut.onclick = () => {
+          const [x, y] = lastCoords;
+          let width = Math.abs(x-startCoords[0]);
+          let height = Math.abs(y-startCoords[1]);
 
-          project.newImage(image, imageTypeValue, valuesMap, values);
+          let currentX = x > startCoords[0] ? startCoords[0] : x;
+          let currentY = y > startCoords[1] ? startCoords[1] : y;
 
-          css.fadeOut.run(imageInfo);
+          let id = values.length+project.values.length;
+          values.push({x: currentX*project.tileSize, y: currentY*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: width, hLength:height});
 
+          for(let _x = 0; _x < width; _x++){
+            for(let _y = 0; _y < height; _y++){
+
+              if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) { return; }
+  
+                valuesMap[_y+currentY][_x+currentX] = id;
+                  
+              }
+            }
+
+            drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
+          }
+
+        addTilesBut.onclick = () => {
+          const [x, y] = lastCoords;
+          let width = Math.abs(x-startCoords[0]);
+          let height = Math.abs(y-startCoords[1]);
+
+          let currentX = x > startCoords[0] ? startCoords[0] : x;
+          let currentY = y > startCoords[1] ? startCoords[1] : y;
+
+
+          for(let _x = 0; _x < width; _x++){
+            for(let _y = 0; _y < height; _y++){
+
+              if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) return;
+
+              let id = values.length+project.values.length;
+              values.push({x: (currentX+_x)*project.tileSize, y: (currentY+_y)*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: 1, hLength:1});
+              valuesMap[_y+currentY][_x+currentX] = id;
+                  
+            }
+          }
+
+          drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
         }
-      })
+
+      imageUploadButton.onclick = () => {
+
+        selectValues.style.display = "none";
+        imageType.onchange = null;
+        imageType.onchange = null;
+        addValueBut.onclick = null;
+
+         project.newImage(image, valuesMap, values);
+
+        css.fadeOut.run(imageInfo);
+        }
+      });
     };
 
     reader.readAsDataURL(file);

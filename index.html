@@ -14,10 +14,10 @@
         </button>
         <div class="dropdown-content">
           <label>
-          New Image <input id="imageUpload" type="file" accept="image/*"/>
+            New Image <input id="imageUpload" type="file" accept="image/*"/>
           </label>
           <label>
-            New Map <button></button>
+            <!-- New Map <button></button> -->
           </label>
         </div>
       </div>
@@ -65,24 +65,20 @@
       <div class="info" id="background"></div>
       <div class="info">
         <div>
-          <label > Image Type:
-            <select id="spriteType">
-              <option value="tile">Single Tile</option>
-              <option value="grid">Tiles Grid</option>
-              <option value="spriteSheet">Sprite Sheet</option>
-            </select>
-          </label>
-          <br>
           <canvas></canvas>
           <br>
           <button type="button" name="button" id = "uploadButton">Upload</button>
         </div>
         <div id = "selectValues">
-          <p>
-            (Click and drag over tiles to create a sprite)
-          </p>
+          <pre>
+            Click and drag over tiles to create a sprite.
+            Click Add Value to save as one sprite.
+            Click Add Tiles to add each tile sepratly.
+          </pre>
           <br>
           <button type="button" name="button" id="addValueButton">Add Value</button>
+          <br>
+          <button type="button" name="button" id="addTilesButton">Add Tiles</button>
         </div>
       </div>
     </div>
