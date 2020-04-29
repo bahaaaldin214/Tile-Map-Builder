@@ -507,12 +507,18 @@ class Sprite {
   }
 }
 
-function drawGrid(context, tileSize, color, width, height){
+function drawGrid(context, tileSize, color, width, height, text){
 
   context.strokeStyle = color;
-  for(let x = 0; x < width; x+=tileSize){
-    for(let y = 0; y < height; y+=tileSize){
-
+  let i = 0;
+  context.font = `10px Georgia`;
+  context.fillStyle = "#000"
+  for(let y = 0; y < height; y+=tileSize){
+    for(let x = 0; x < width; x+=tileSize){
+      
+      if(text  !== undefined){
+        context.fillText(text+i, x, tileSize+y);
+      }
       context.beginPath();
       context.moveTo(x, y);
       context.lineTo(x+tileSize, y);
@@ -522,11 +528,12 @@ function drawGrid(context, tileSize, color, width, height){
       context.moveTo(x, y);
       context.lineTo(x, y+tileSize);
       context.stroke();
+      i++;
     }
   }
 }
 
-function drawNewImage(type, context, image, tileSize, values, realTileSize){
+function drawNewImage(type, context, image, tileSize, values, realTileSize, id){
   context.clearRect(0, 0, 300, context.canvas.height);
   context.drawImage(image, 0, 0, 300, context.canvas.height);
 
@@ -539,7 +546,7 @@ function drawNewImage(type, context, image, tileSize, values, realTileSize){
       break;
 
       case "grid": 
-        drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height);
+        drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height, id);
       break;
       
       case "spriteSheet": 
@@ -556,6 +563,10 @@ function drawNewImage(type, context, image, tileSize, values, realTileSize){
           drawnIds[id] = true;
           context.drawImage(image, x, y, wLength*realTileSize, hLength*realTileSize,
                x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
+
+          context.fillStyle = "#000"
+          context.font = tileSize+"px Georgia";
+          context.fillText(id.toString(), x/realTileSize*tileSize, y/realTileSize*tileSize+tileSize);
           
           context.strokeStyle = "#153fc6";
           context.lineWidth = 5;
@@ -582,7 +593,7 @@ window.addEventListener("load", function(){
   
   const imageUploadButton = imageInfo.querySelector("#uploadButton");
   const imageType = imageInfo.querySelector("select");
-  imageType.value = "tile";
+  
   const newImageCanvas  = imageInfo.querySelector("canvas").getContext("2d");
   
   const selectValues = imageInfo.querySelector("#selectValues");
@@ -600,6 +611,8 @@ window.addEventListener("load", function(){
     reader.onload = function(){
 
       project.createImage(this.result).then(image => {
+
+        imageType.value = "tile";
         css.fadeInGrid.run(imageInfo);
         const ratio = 300/image.width;
         let tileSize = ratio*project.tileSize;
@@ -615,12 +628,12 @@ window.addEventListener("load", function(){
 
         let values = [];
 
-        drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize);
+        drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize, project.values.length);
         
         imageType.onchange = function(){
           imageTypeValue = this.value;
-
-          drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize);
+          newImageCanvas.canvas.onmousedown = newImageCanvas.canvas.onmouseup = newImageCanvas.canvas.onmousemove = null;
+          drawNewImage(imageTypeValue,newImageCanvas, image, tileSize, values, project.tileSize, project.values.length);
 
           selectValues.style.display = "none";
           if(imageTypeValue == "spriteSheet"){
