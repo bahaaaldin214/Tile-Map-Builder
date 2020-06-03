@@ -131,10 +131,10 @@ class Project {
 
     for(let _x = 0; _x < info.wLength; _x++){
       for(let _y = 0; _y < info.hLength; _y++){
-        map[y+_y][x+_x] = -1; 
+        map[y+_y][x+_x] = -1;
       }
     }
-    
+
     map[y][x] = selectedValue;
 
     this.draw(Math.min(10, Math.max(1, scaledTileSize*0.1)));
@@ -175,8 +175,20 @@ class Project {
       }
 
     }
-    this.saveFile(URL.createObjectURL(new Blob([[map1]], {type: 'application/json'})), "tileMap.json");
+    this.saveFile(URL.createObjectURL(new Blob([JSON.stringify(map1)], {type: 'application/json'})), "tileMap.json");
 
+  }
+
+  exportValues(){
+    const simplifiedObject = this.values.map(({x, y, wLength, hLength}) => {
+      return {
+        x, y,
+        w: wLength,
+        h: hLength
+      }
+    });
+
+    this.saveFile(URL.createObjectURL(new Blob([JSON.stringify(simplifiedObject)], {type: 'application/json'})), "values.json");
   }
 
   async createImage(dataURI){
@@ -205,9 +217,9 @@ class Project {
     const sprite = new Sprite(context, image);
 
     this.images.appendChild(canvas);
- 
+
     sprite.spriteSheet(this, valuesMap, values);
-    
+
   }
 
   saveImage(){
@@ -392,7 +404,7 @@ class Sprite {
     for(let i = values.length; i--;){
 
       const {id, x, y, wLength, hLength} = values[i];
-          
+
       if(drawnIds[id]) continue;
 
       drawnIds[id] = true;
@@ -407,21 +419,21 @@ class Sprite {
     }
 
     canvas.onclick = (e) => {
-      
+
       project.canvasSettings.style.display = "block";
 
       const rect = canvas.getBoundingClientRect();
       const currentX = e.pageX - rect.x;
       const currentY = e.pageY - rect.y;
-      
+
       const ratio = rect.width/canvas.width;
 
       const x = Math.floor(currentX/(project.tileSize*ratio));
       const y = Math.floor(currentY/(project.tileSize*ratio));
       if(valuesMap[y] == undefined || valuesMap[y][x] == undefined) return;
-      
+
       project.selectedValue = valuesMap[y][x];
-      
+
       project.selectedCanvas = this;
 
     }
@@ -437,7 +449,7 @@ function drawGrid(context, tileSize, color, width, height, text){
   context.fillStyle = "#000"
   for(let y = 0; y < height; y+=tileSize){
     for(let x = 0; x < width; x+=tileSize){
-      
+
       if(text  !== undefined){
         context.fillText(text+i, x, tileSize+y);
       }
@@ -460,9 +472,9 @@ function drawNewImage(context, image, tileSize, values, realTileSize, id){
   context.drawImage(image, 0, 0, 300, context.canvas.height);
 
   drawGrid(context, tileSize, "#153f46", context.canvas.width, context.canvas.height);
-  
+
   const drawnIds = {};
-  
+
   for(let i = values.length; i--;){
 
     const {id, x, y, wLength, hLength} = values[i];
@@ -475,7 +487,7 @@ function drawNewImage(context, image, tileSize, values, realTileSize, id){
     context.fillStyle = "#000"
     context.font = tileSize+"px Georgia";
     context.fillText(id.toString(), x/realTileSize*tileSize, y/realTileSize*tileSize+tileSize);
-          
+
     context.strokeStyle = "#153fc6";
     context.lineWidth = 3;
     context.strokeRect(x/realTileSize*tileSize, y/realTileSize*tileSize, wLength*tileSize, hLength*tileSize);
@@ -542,10 +554,10 @@ window.addEventListener("load", function(){
 
         newImageCanvas.canvas.onmousedown = newImageCanvas.canvas.onmouseup = newImageCanvas.canvas.onmousemove = (e) => {
 
-          const canvasCoords =newImageCanvas.canvas.getBoundingClientRect(); 
+          const canvasCoords =newImageCanvas.canvas.getBoundingClientRect();
           let x = Math.floor((e.pageX - canvasCoords.x)/tileSize);
           let y = Math.floor((e.pageY - canvasCoords.y)/tileSize);
-              
+
           if(e.type == "mousedown") {
             startCoords = [x, y];
             lastMouseType = "mousedown";
@@ -585,9 +597,9 @@ window.addEventListener("load", function(){
             for(let _y = 0; _y < height; _y++){
 
               if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) { return; }
-  
+
                 valuesMap[_y+currentY][_x+currentX] = id;
-                  
+
               }
             }
 
@@ -611,7 +623,7 @@ window.addEventListener("load", function(){
               let id = values.length+project.values.length;
               values.push({x: (currentX+_x)*project.tileSize, y: (currentY+_y)*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: 1, hLength:1});
               valuesMap[_y+currentY][_x+currentX] = id;
-                  
+
             }
           }
 
@@ -638,6 +650,7 @@ window.addEventListener("load", function(){
 
   document.querySelector("#export").onclick = () => project.export();
   document.querySelector("#saveImage").onclick = () => project.saveImage();
+  document.querySelector("#exportValues").onclick = () => project.exportValues();
 
   document.querySelector("#newLayer").onclick = () => project.newLayer();
 
