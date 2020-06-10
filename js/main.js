@@ -236,7 +236,7 @@ class Project {
 
   saveImage(){
 
-    this.draw(0);
+    this.draw(0, true);
 
     this.saveFile(this.canvas.toDataURL("image/png"), "tileMap.png");
     this.draw(Math.min(10, Math.max(1, this.scaledTileSize*0.1)));
@@ -262,9 +262,9 @@ class Project {
 
   }
 
-  draw(space){
+  draw(space, trueSize){
 
-    const {mainContext, canvas, canvasLength, scaledTileSize, maps, values, tilesLength} = this;
+    const {mainContext, canvas, canvasLength, scaledTileSize, maps, values, tilesLength, tileSize} = this;
 
     mainContext.fillStyle = "#131325"
     mainContext.fillRect(0, 0, canvasLength, canvasLength);
@@ -274,7 +274,7 @@ class Project {
       const map = maps[maps.length - i - 1];
       const bufferCanvas = map.buffer.canvas;
 
-      map.draw(canvasLength, scaledTileSize, values, space);
+      map.draw(canvasLength, trueSize ? tileSize : scaledTileSize, values, space);
 
       mainContext.drawImage(bufferCanvas, 0, 0)
     }
