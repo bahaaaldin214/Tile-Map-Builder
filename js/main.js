@@ -782,7 +782,6 @@ window.addEventListener("load", function(){
 
       }
       for(let i = 0; i < layers.length; i++){
-        console.log(layers[i])
         project.newLayer(layers[i]);
       }
     }
