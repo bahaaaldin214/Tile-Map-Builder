@@ -38,14 +38,12 @@
       </div>
     </div>
     <div id = "canvasSettings">
-      <button id = "spriteSheetButton">spritesheet</button>
-      <br>
       <button id = "zoomButton">zoomButton</button>
     </div>
     <canvas id = "canvas"></canvas>
     <canvas id = "zoomedImage"></canvas>
     <div id="layers">
-      <button type="button" name="button" id="newLayer">New Layer</button>
+      <button type="button" id="newLayer">New Layer</button>
       <br>
     </div>
     <div id = "images"></div>
@@ -70,19 +68,34 @@
         <div>
           <canvas></canvas>
           <br>
-          <button type="button" name="button" id = "uploadButton">Upload</button>
+          <button type="button" id = "uploadButton">Upload</button>
         </div>
         <div id = "selectValues">
-          <pre>
+          <pre id = "help">
             Click and drag over tiles to create a sprite.
             Click Add Value to save as one sprite.
             Click Add Tiles to add each tile sepratly.
+            Click Upload Values if you saved the tile values before.
           </pre>
           <br>
-          <button type="button" name="button" id="addValueButton">Add Value</button>
+          <input id = "imageName" type="text" name="" value="Image">
           <br>
-          <button type="button" name="button" id="addTilesButton">Add Tiles</button>
+          <button type="button" id="addValueButton">Add Value</button>
+          <br>
+          <button type="button" id="addTilesButton">Add Tiles</button>
+          <br>
+          <label id = "valuesUploadLabale">
+            Upload Values <input id="valuesUpload" type="file" accept=".json"/>
+          </label>
         </div>
+      </div>
+    </div>
+    <div class="popUp" id = "selecteUploadedValues">
+      <div id="background"></div>
+      <div class="info" id="valuesDetails">
+        <select name="imageName" id = "imageNamesSelect"></select>
+        <br>
+        <button type="button">Select</button>
       </div>
     </div>
   </body>

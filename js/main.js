@@ -53,6 +53,7 @@ class Project {
 
     this.maps = [];
     this.values = [];
+    this.imageNames = [];
 
     this.lastMouseType = "mouseup"
 
@@ -180,15 +181,23 @@ class Project {
   }
 
   exportValues(){
-    const simplifiedObject = this.values.map(({x, y, wLength, hLength}) => {
-      return {
+    const values = {};
+    const images = this.imageNames;
+    this.values.forEach(({x, y, wLength, hLength, imageId}) => {
+      let object =  {
         x, y,
         w: wLength,
         h: hLength
+      };
+      const imageName = images[imageId];
+      if(values[imageName]) {
+        values[imageName].push(object);
+      } else {
+        values[imageName] = [object];
       }
     });
 
-    this.saveFile(URL.createObjectURL(new Blob([JSON.stringify(simplifiedObject)], {type: 'application/json'})), "values.json");
+    this.saveFile(URL.createObjectURL(new Blob([JSON.stringify(values, null, '\t')], {type: 'application/json'})), "values.json");
   }
 
   async createImage(dataURI){
@@ -502,12 +511,41 @@ function drawSelected(image, context, tileSize, realTileSize, x, y, width, heigh
   x*tileSize, y*tileSize, tileSize*width, tileSize*height);
 }
 
+function addValue([x, y], startCoords, values, project, image, imageId, valuesMap, array, canvas){
+
+  let width = Math.abs(x-startCoords[0]);
+  let height = Math.abs(y-startCoords[1]);
+
+  let currentX = x > startCoords[0] ? startCoords[0] : x;
+  let currentY = y > startCoords[1] ? startCoords[1] : y;
+
+  let id = values.length+project.values.length;
+  if(!array){
+    values.push({x: currentX*project.tileSize, y: currentY*project.tileSize, image, id, imageId, width: project.tileSize, height: project.tileSize, wLength: width, hLength:height});
+  }
+
+  for(let _x = 0; _x < width; _x++){
+    for(let _y = 0; _y < height; _y++){
+
+      if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) { return; }
+
+        if(array){
+          id = values.length+project.values.length;
+          values.push({x: (currentX+_x)*project.tileSize, y: (currentY+_y)*project.tileSize, image, id, imageId, width: project.tileSize, height: project.tileSize, wLength: 1, hLength:1});
+
+        }
+        valuesMap[_y+currentY][_x+currentX] = id;
+
+      }
+    }
+
+}
 window.addEventListener("load", function(){
 
   const project = new Project();
 
   const imageInput = document.querySelector("#imageUpload");
-  const [info, imageInfo] = document.querySelectorAll(".popUp");
+  const [info, imageInfo, selecteUploadedValues] = document.querySelectorAll(".popUp");
 
   const imageUploadButton = imageInfo.querySelector("#uploadButton");
 
@@ -516,11 +554,17 @@ window.addEventListener("load", function(){
   const selectValues = imageInfo.querySelector("#selectValues");
   const addValueBut = selectValues.querySelector("#addValueButton");
   const addTilesBut = selectValues.querySelector("#addTilesButton");
+  const imageName = selectValues.querySelector("#imageName");
+  const valuesUpload = selectValues.querySelector("#valuesUpload");
+
+  const imageNamesSelect = selecteUploadedValues.querySelector("#imageNamesSelect");
+  const verfiyValues = selecteUploadedValues.querySelector("button");
 
   newImageCanvas.canvas.width = 300;
 
   imageInput.addEventListener("change", function(){
-
+    project.imageNames.push(imageName.value);
+    let imageId = project.imageNames.length - 1;
     const name = imageInput.value.split("\\").pop();
 
     const file = this.files[0];
@@ -582,60 +626,73 @@ window.addEventListener("load", function(){
 
         }
 
-        addValueBut.onclick = () => {
-          const [x, y] = lastCoords;
-          let width = Math.abs(x-startCoords[0]);
-          let height = Math.abs(y-startCoords[1]);
+        addValueBut.onclick = function(){
 
-          let currentX = x > startCoords[0] ? startCoords[0] : x;
-          let currentY = y > startCoords[1] ? startCoords[1] : y;
-
-          let id = values.length+project.values.length;
-          values.push({x: currentX*project.tileSize, y: currentY*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: width, hLength:height});
-
-          for(let _x = 0; _x < width; _x++){
-            for(let _y = 0; _y < height; _y++){
-
-              if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) { return; }
-
-                valuesMap[_y+currentY][_x+currentX] = id;
-
-              }
-            }
-
-            drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
-          }
-
-        addTilesBut.onclick = () => {
-          const [x, y] = lastCoords;
-          let width = Math.abs(x-startCoords[0]);
-          let height = Math.abs(y-startCoords[1]);
-
-          let currentX = x > startCoords[0] ? startCoords[0] : x;
-          let currentY = y > startCoords[1] ? startCoords[1] : y;
-
-
-          for(let _x = 0; _x < width; _x++){
-            for(let _y = 0; _y < height; _y++){
-
-              if(_y+currentY >= valuesMap.length || _x+currentX >= valuesMap[0].length || _y+currentY<0 || _x+currentX < 0) return;
-
-              let id = values.length+project.values.length;
-              values.push({x: (currentX+_x)*project.tileSize, y: (currentY+_y)*project.tileSize, image, id, width: project.tileSize, height: project.tileSize, wLength: 1, hLength:1});
-              valuesMap[_y+currentY][_x+currentX] = id;
-
-            }
-          }
-
+          addValue(lastCoords, startCoords, values, project, image, imageId, valuesMap, false, newImageCanvas);
           drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
+
         }
 
-      imageUploadButton.onclick = () => {
+        addTilesBut.onclick = function(){
+          addValue(lastCoords, startCoords, values, project, image, imageId, valuesMap, true, newImageCanvas);
+          drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
 
+        }
+
+        valuesUpload.onchange = function(){
+            const file = this.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(){
+
+              const json = JSON.parse(this.result);
+              const imagesNames = Object.keys(json);
+
+              while (imageNamesSelect.firstChild) {
+                  imageNamesSelect.removeChild(imageNamesSelect.firstChild);
+              }
+
+              for(let i = imagesNames.length; i--;){
+                const newValue = document.createElement("option");
+                const name = imagesNames[i];
+
+                newValue.value = name;
+                newValue.innerHTML = name;
+
+                imageNamesSelect.appendChild(newValue);
+              }
+
+              verfiyValues.onclick = function(){
+                const uploadValues = json[imageNamesSelect.value];
+
+                for(let i = uploadValues.length; i--;){
+                  const {x, y, w, h} = uploadValues[i];
+
+                  id = values.length+project.values.length;
+                  values.push({x, y, image, id, imageId, width: project.tileSize, height: project.tileSize, wLength: w, hLength:h});
+
+                  valuesMap[y/project.tileSize][x/project.tileSize] = id;
+                }
+
+                css.fadeOut.run(selecteUploadedValues);
+                drawNewImage(newImageCanvas, image, tileSize, values, project.tileSize);
+                imageName.value = imageNamesSelect.value;
+
+              }
+
+              css.fadeInGrid.run(selecteUploadedValues);
+            }
+
+            reader.readAsText(file);
+        };
+
+
+      imageUploadButton.onclick = () => {
+        project.imageNames[imageId] = imageName.value;
         selectValues.style.display = "none";
         addValueBut.onclick = null;
-
-         project.newImage(image, valuesMap, values);
+        console.log(valuesMap, values);
+        project.newImage(image, valuesMap, values);
 
         css.fadeOut.run(imageInfo);
         }
@@ -646,8 +703,6 @@ window.addEventListener("load", function(){
   });
 
   document.querySelector("#zoomButton").onclick =  () =>     project.selectedCanvas.zoom(project);
-  document.querySelector("#spriteSheetButton").onclick = () => project.selectedCanvas.spriteSheet(project);
-
   document.querySelector("#export").onclick = () => project.export();
   document.querySelector("#saveImage").onclick = () => project.saveImage();
   document.querySelector("#exportValues").onclick = () => project.exportValues();

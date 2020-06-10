@@ -162,7 +162,23 @@
      width: 100%;
      font-size: 20px;
 }
+#valuesUpload{
+  display: none;
+}
  #selectValues {
      display: none;
      align-items:space-around;
+}
+
+#valuesUploadLabale {
+  color: black;
+  background: white;
+  border-radius: 5px;
+  border: 10px;
+  width: 100%;
+  font-weight: 70;
+}
+
+#help {
+  font-size: 15px;
 }
