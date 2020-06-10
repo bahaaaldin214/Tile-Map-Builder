@@ -52,8 +52,9 @@
      width: 290px;
      height: 290px;
      overflow-y: scroll;
-     resize: vertical;
+     resize: both;
      min-height: 290px;
+     min-width: 290px;
      background-color: #303030;
 }
  #images:hover {
@@ -62,10 +63,10 @@
  #images canvas {
      width: 100%;
 }
- #canvasSettings {
-     display: none;
+ #buttonsArray {
      top: 50px;
      height:200px;
+     margin: 5px;
      position: absolute;
      right: 0;
 }

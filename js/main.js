@@ -1,3 +1,5 @@
+import css from "./cssAnimations.js";
+
 window.addEventListener("onbeforeunload", function(e) {
   if(!e) e = window.event;
 
@@ -29,10 +31,12 @@ function getInts(node){
   return ints;
 }
 
+const controller = {}
+
 class Project {
 
   constructor(){
-    selectors(this, "#images", "#canvas", "#canvasSettings", "#layers", "#zoomedImage");
+    selectors(this, "#images", "#canvas", "#buttonsArray", "#layers", "#zoomedImage");
 
     this.mainContext = this.canvas.getContext("2d");
 
@@ -82,7 +86,7 @@ class Project {
 
   handleMouse(e){
 
-    const {zoomedImageContext, canvas: {offsetLeft, offsetTop}, scaledTileSize, zoomedImage, canvasSettings, selectedCanvas, lastMouseType, selectedValue, currentLayer, values} = this;
+    const {zoomedImageContext, canvas: {offsetLeft, offsetTop}, scaledTileSize, zoomedImage, buttonsArray, selectedCanvas, lastMouseType, selectedValue, currentLayer, values} = this;
     this.lastMouseType = e.type !== "mousemove" ? e.type : lastMouseType;
 
     const map = currentLayer.tiles;
@@ -106,14 +110,12 @@ class Project {
 
           zoomedImageContext.fillStyle = "#153f46c0";
           zoomedImageContext.fillRect(x*scaledTileSize + imageX, y*scaledTileSize, scaledTileSize, scaledTileSize);
-        } else {
-
         }
     }
 
     if(e.type == "mouseup"){
 
-        canvasSettings.style.display = "none";
+        buttonsArray.children[buttonsArray.children.length - 1].style.display = "none";
         if(selectedCanvas && selectedCanvas.isZoomed){
           css.fadeOut.run(zoomedImage);
 
@@ -122,17 +124,18 @@ class Project {
         }
     }
 
-    if(lastMouseType == "mouseup" || !currentLayer || !selectedCanvas) return;
+    if(lastMouseType == "mouseup" || !currentLayer) return;
     const x = Math.floor((e.pageX - offsetLeft)/scaledTileSize);
     const y = Math.floor((e.pageY - offsetTop )/scaledTileSize);
 
     if(y > map.length || y < 0 || x > map[0].length || x < 0) return;
 
     const info = values[selectedValue];
-
-    for(let _x = 0; _x < info.wLength; _x++){
-      for(let _y = 0; _y < info.hLength; _y++){
-        map[y+_y][x+_x] = -1;
+    if(selectedValue !== -1){
+      for(let _x = 0; _x < info.wLength; _x++){
+        for(let _y = 0; _y < info.hLength; _y++){
+          map[y+_y][x+_x] = -1;
+        }
       }
     }
 
@@ -239,10 +242,10 @@ class Project {
     this.draw(Math.min(10, Math.max(1, this.scaledTileSize*0.1)));
   }
 
-  newLayer(){
+  newLayer(tiles){
 
     const {canvasLength, layers, tilesLength, maps} = this;
-    const layer = new Layer(canvasLength, layers, tilesLength);
+    const layer = new Layer(canvasLength, layers, tilesLength, tiles);
 
     layer.canvas.onclick = () => {
 
@@ -278,13 +281,11 @@ class Project {
 
   }
 
-  static from(){/*TODO: */}
-
 }
 
 class Layer{
 
-  constructor(canvasLength, layers, tilesLength){
+  constructor(canvasLength, layers, tilesLength, tiles){
 
     this.canvas = document.createElement("canvas");
     this.bufferCanvas = document.createElement("canvas");
@@ -297,15 +298,27 @@ class Layer{
 
     this.tiles = [];
 
-
-    for(let i = 0; i < tilesLength; i++){
-      const newColumn = [];
-      for(let j = 0; j < tilesLength; j++){
-
-        newColumn.push(-1)
+    if(tiles){
+      let k = 0;
+      for(let i = 0; i < tilesLength; i++){
+        let newColumn = [];
+        for(let j = 0; j < tilesLength; j++){
+          newColumn.push(tiles[k]);
+          k++;
+        }
+        this.tiles.push(newColumn);
       }
 
-      this.tiles.push(newColumn);
+    } else {
+      for(let i = 0; i < tilesLength; i++){
+        const newColumn = [];
+        for(let j = 0; j < tilesLength; j++){
+
+          newColumn.push(-1)
+        }
+
+        this.tiles.push(newColumn);
+      }
     }
 
 
@@ -327,7 +340,6 @@ class Layer{
         if(value == -1) { continue; }
 
         const {x, y, width, height, image, wLength, hLength} = values[value];
-
         buffer.drawImage(image, x, y, width*wLength, height*hLength, _x*scaledTileSize, _y*scaledTileSize, scaledTileSize*wLength-space, scaledTileSize*hLength-space)
 
       }
@@ -429,7 +441,8 @@ class Sprite {
 
     canvas.onclick = (e) => {
 
-      project.canvasSettings.style.display = "block";
+      project.buttonsArray.children[project.buttonsArray.children.length - 1].style.display = "block";
+      project.selectedCanvas = this;
 
       const rect = canvas.getBoundingClientRect();
       const currentX = e.pageX - rect.x;
@@ -442,9 +455,6 @@ class Sprite {
       if(valuesMap[y] == undefined || valuesMap[y][x] == undefined) return;
 
       project.selectedValue = valuesMap[y][x];
-
-      project.selectedCanvas = this;
-
     }
 
   }
@@ -540,6 +550,29 @@ function addValue([x, y], startCoords, values, project, image, imageId, valuesMa
     }
 
 }
+
+window.addEventListener("keyup", function(e){
+
+  if(controller[e.key]){
+    controller[e.key]();
+  }
+});
+
+function newPorject(info, project){
+  const [tileSize, tilesLength] = getInts(info.querySelectorAll("input"));
+
+  if(isNaN(tileSize) || isNaN(tilesLength)) return;
+
+  css.fadeOut.run(info);
+  project.setup(tileSize, tilesLength);
+  project.newLayer();
+
+  project.canvas.addEventListener("mousedown", project.handleMouse);
+  window.addEventListener("mouseup", project.handleMouse);
+  window.addEventListener("mousemove", project.handleMouse);
+  project.draw();
+}
+
 window.addEventListener("load", function(){
 
   const project = new Project();
@@ -575,6 +608,9 @@ window.addEventListener("load", function(){
       project.createImage(this.result).then(image => {
 
         css.fadeInGrid.run(imageInfo);
+        controller.Escape = function(){
+          css.fadeOut.run(imageInfo);
+        }
         const ratio = 300/image.width;
         let tileSize = ratio*project.tileSize;
 
@@ -640,6 +676,11 @@ window.addEventListener("load", function(){
         }
 
         valuesUpload.onchange = function(){
+            const privouseCommand = controller.Escape;
+            controller.Escape = function(){
+              css.fadeOut.run(selecteUploadedValues);
+              controller.Escape = privouseCommand;
+            }
             const file = this.files[0];
             const reader = new FileReader();
 
@@ -664,6 +705,7 @@ window.addEventListener("load", function(){
 
               verfiyValues.onclick = function(){
                 const uploadValues = json[imageNamesSelect.value];
+                let id = values.length+project.values.length;
 
                 for(let i = uploadValues.length; i--;){
                   const {x, y, w, h} = uploadValues[i];
@@ -691,7 +733,6 @@ window.addEventListener("load", function(){
         project.imageNames[imageId] = imageName.value;
         selectValues.style.display = "none";
         addValueBut.onclick = null;
-        console.log(valuesMap, values);
         project.newImage(image, valuesMap, values);
 
         css.fadeOut.run(imageInfo);
@@ -709,22 +750,50 @@ window.addEventListener("load", function(){
 
   document.querySelector("#newLayer").onclick = () => project.newLayer();
 
-  document.querySelector("#createButton").onclick = function(){
+  document.querySelector("#createButton").onclick = () => newPorject(info, project);
 
-    const [tileSize, tilesLength] = getInts(info.querySelectorAll("input"));
-    if(isNaN(tileSize) || isNaN(tilesLength)) return;
+  document.querySelector("#eraser").onclick = function(){
+    project.selectedValue = -1;
+    project.selectedCanvas = null;
+  }
 
-    css.fadeOut.run(info);
+  document.querySelector("#layerUpload").addEventListener("change", function(){
+    const file = this.files[0];
+    const reader = new FileReader();
 
-    project.setup(tileSize, tilesLength);
-    project.newLayer();
+    reader.onload = function(){
+      const map = JSON.parse(this.result);
 
-    project.canvas.addEventListener("mousedown", project.handleMouse);
-    window.addEventListener("mouseup", project.handleMouse);
-    window.addEventListener("mousemove", project.handleMouse);
+      let layers = [[]];
 
-    project.draw();
+      for(let i = 0; i < map.length; i++){
+        const values = map[i];
 
+        if(Array.isArray(values)){
+            for(let j = 0; j < values.length; j++){
+              if(!layers[j]){
+                layers.push(new Array(map.length).fill(-1))
+              }
+              layers[j][i] = values[j];
+            }
+        } else {
+          layers[0][i] = values;
+        }
+
+      }
+      for(let i = 0; i < layers.length; i++){
+        console.log(layers[i])
+        project.newLayer(layers[i]);
+      }
+    }
+
+    reader.readAsText(file);
+
+  });
+
+  controller.Enter = function(){
+    newPorject(info, project);
+    delete controller.Enter;
   }
 
   css.fadeInGrid.run(info);

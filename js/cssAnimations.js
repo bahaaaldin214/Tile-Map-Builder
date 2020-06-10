@@ -121,3 +121,5 @@ css.moveToMiddle = new cssFunction({
     },
     1100
 );
+
+export default css;

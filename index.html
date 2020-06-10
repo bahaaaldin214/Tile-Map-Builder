@@ -3,21 +3,20 @@
   <head>
     <title>Level builder</title>
     <meta charset="UTF-8">
-    <script src = "js/cssAnimations.js"></script>
-    <script src="js/main.js"></script>
+    <script type = "module" src="js/main.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
     <div class="navbar">
       <div class="dropdown">
-        <button class="dropbtn">New
+        <button class="dropbtn">upload
         </button>
         <div class="dropdown-content">
           <label>
             New Image <input id="imageUpload" type="file" accept="image/*"/>
           </label>
           <label>
-            <!-- New Map <button></button> -->
+            Upload Layers <input id="layerUpload" type="file" accept=".json"/>
           </label>
         </div>
       </div>
@@ -37,8 +36,10 @@
         </div>
       </div>
     </div>
-    <div id = "canvasSettings">
-      <button id = "zoomButton">zoomButton</button>
+    <div id = "buttonsArray">
+      <button id = "eraser">Eraser</button>
+      <br>
+      <button id = "zoomButton">Zoom Image</button>
     </div>
     <canvas id = "canvas"></canvas>
     <canvas id = "zoomedImage"></canvas>
@@ -59,7 +60,6 @@
         </label>
         <br>
         <button id = "createButton">create</button>
-
       </div>
     </div>
     <div class="popUp">
