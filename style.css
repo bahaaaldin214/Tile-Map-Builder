@@ -183,3 +183,12 @@
 #help {
   font-size: 15px;
 }
+
+.adsbygoogle {
+  position: fixed;
+  top: 300px;
+  background: white;
+  background-color: white;
+  width: 290px;
+  height: 600px;
+}
