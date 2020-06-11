@@ -185,7 +185,7 @@
 }
 
 .adsbygoogle {
-  position: relative;
+  position: fixed;
   top: 320px;
   background: white;
   background-color: white;
