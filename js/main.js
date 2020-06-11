@@ -752,7 +752,7 @@ window.addEventListener("load", function(){
 
   document.querySelector("#createButton").onclick = () => newPorject(info, project);
 
-  document.querySelector("#eraser").onclick = function(){
+  document.querySelector("#eraser").onclick = controller.e = function(){
     project.selectedValue = -1;
     project.selectedCanvas = null;
   }
